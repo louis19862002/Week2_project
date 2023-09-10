@@ -1,0 +1,117 @@
+# Project 1 
+```{r, echo=TRUE}
+# Set working directory
+setwd("C:/Users/louis/Desktop/Project_1")
+
+# Read csv file
+data <- read.csv("activity.csv")
+
+# subtract month and day and add to the new columns
+data$month <- substr(data$date, 6, 7)
+data$day <- substr(data$date, 9, 10)
+
+
+#remve NA data
+data_na <- na.omit(data)
+```
+
+
+
+```{r, echo=TRUE}
+library(dplyr)
+# Histogram of the total number of steps taken each day
+step_each_day <- data_na %>%
+    group_by(month,day) %>%
+    summarise(sum = sum(steps))
+
+library(ggplot2)
+hist <- ggplot(data_na, aes(x = date, y = steps)) + geom_bar(stat = "identity", fill = "blue") + labs(title = "Histogram, data without NA", x = "Date", y = "Steps") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+
+hist
+```
+
+```{r}
+# Mean and median number of steps taken each day
+mean_median_per_day <- data_na %>%
+    group_by(month,day)%>%
+    summarise(mean = mean(steps),
+              median = median(steps))
+
+print(mean_median_per_day)
+```
+
+
+```{r}
+# What is the average daily activity pattern?
+
+step_each_interval <- data_na %>%
+    group_by(interval)%>%
+    summarise(mean = mean(steps))
+
+activity <- ggplot(step_each_interval, aes(x = interval, y = mean)) + geom_line()
+
+
+activity
+```
+
+hist <- ggplot(data_na, aes(x = date, y = steps)) + geom_bar(stat = "identity", fill = "blue") + labs(title = "Histogram", x = "Date", y = "Steps") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+
+```{r, Imputing missing values}
+# Check all the columns
+summary(is.na(data))
+
+# Only in step column, there are 2304 NAs.
+
+```
+
+```{r}
+# Devise a strategy for filling the missing value
+
+# The values I plan to fill are based on the mean and sd of each interval. Therefore, I calculated the mean and sd from the data without NA to avoid bias
+step_each_interval_fill <- data_na %>%
+    group_by(interval)%>%
+    summarise(mean = mean(steps),
+              sd = sd(steps))
+
+# Then merge the mean and sd data to my data frame "step_each_interval_fill" and set the value to be positive
+data_filled <- data%>%
+    left_join(step_each_interval_fill, by = "interval")%>%
+    mutate(steps = ifelse(is.na(steps), round(abs(rnorm(sum(is.na(steps)), mean = mean, sd = sd))), steps))
+
+
+```
+
+
+```{r}
+# Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day. Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?
+
+
+# histogram
+library(ggplot2)
+hist_nafill <- ggplot(data_filled, aes(x = date, y = steps)) + geom_bar(stat = "identity", fill = "blue") + labs(title = "Histogram, NA filled", x = "Date", y = "Steps") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+
+hist_nafill
+
+
+# mean and median
+mean_median_per_day <- data_filled %>%
+    group_by(month,day)%>%
+    summarise(mean = mean(steps),
+              median = median(steps))
+
+# print the result
+print(mean_median_per_day)
+
+
+```
+```{r}
+# The output histogram for both data
+hist
+hist_nafill
+
+
+
+```
