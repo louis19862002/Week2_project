@@ -104,6 +104,39 @@ data_filled <- data%>%
 
 ```
 
+
+```{r}
+# Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day. Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?
+
+
+# histogram
+library(ggplot2)
+hist_nafill <- ggplot(data_filled, aes(x = date, y = steps)) + geom_bar(stat = "identity", fill = "blue") + labs(title = "Histogram, NA filled", x = "Date", y = "Steps") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+
+hist_nafill
+
+
+# mean and median
+mean_median_per_day <- data_filled %>%
+    group_by(month,day)%>%
+    summarise(mean = mean(steps),
+              median = median(steps))
+
+# print the result
+print(mean_median_per_day)
+
+
+```
+```{r}
+# The output histogram for both data
+hist
+hist_nafill
+
+
+
+```
+
 # To compare the data from "weekday" and "weekend" days,I extracted the data from both "weekday" and "weekend" days, and separate them into two data frame
 ```{r}
 # Are there differences in activity patterns between weekdays and weekends?
@@ -193,3 +226,5 @@ combined_plot <- combined_plot +
 
 print(combined_plot)
 ```
+
+
