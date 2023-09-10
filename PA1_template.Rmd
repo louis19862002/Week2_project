@@ -148,7 +148,9 @@ activity_weekday <- ggplot(weekday_sum, aes(x = interval, y = mean)) +
             annotate("text", x = weekday_max_interval$interval, y = weekday_max_interval$mean, 
                      label = paste("Max Step: ", weekday_max_interval$mean, " at ", weekday_max_interval$interval), 
                      vjust = -0.5, hjust = -0.1, color = "red") +
-            geom_vline(xintercept = weekday_max_interval$interval, color = "red", linetype = "dashed")
+            geom_vline(xintercept = weekday_max_interval$interval, color = "red", linetype = "dashed") +
+            labs(title ="Mean step in weekday") + 
+            ylim(0, 270)
 
 activity_weekday
 ```
@@ -173,7 +175,9 @@ activity_weekend <- ggplot(weekend_sum, aes(x = interval, y = mean)) +
             annotate("text", x = weekend_max_interval$interval, y = weekend_max_interval$mean, 
                      label = paste("Max Step: ", weekend_max_interval$mean, " at ", weekend_max_interval$interval), 
                      vjust = -0.5, hjust = -0.1, color = "red") +
-            geom_vline(xintercept = weekend_max_interval$interval, color = "red", linetype = "dashed")
+            geom_vline(xintercept = weekend_max_interval$interval, color = "red", linetype = "dashed") +
+            labs(title ="Mean step in weekend") + 
+            ylim(0, 270)
 
 activity_weekend
 
