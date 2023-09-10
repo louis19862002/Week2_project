@@ -1,0 +1,191 @@
+# Coursera Reproducible Research Course Project 1
+
+# I list all the step I had to process the data: 
+
+- First, set up the directory
+- Then read the data
+- Subtract the month and day to new columns
+- remove the missing value for the first time
+```{r, echo=TRUE}
+# Set working directory
+setwd("C:/Users/louis/Desktop/Project_1")
+
+# Read csv file
+data <- read.csv("activity.csv")
+
+# subtract month and day and add to the new columns
+data$month <- substr(data$date, 6, 7)
+data$day <- substr(data$date, 9, 10)
+
+
+#remve NA data
+data_na <- na.omit(data)
+```
+
+
+## Generate a histogram to show the total number of steps taken each day
+```{r, echo=TRUE}
+library(dplyr)
+# Histogram of the total number of steps taken each day
+
+step_each_day <- data_na %>%
+    group_by(month,day) %>%
+    summarise(sum = sum(steps))
+
+library(ggplot2)
+hist <- ggplot(data_na, aes(x = date, y = steps)) + geom_bar(stat = "identity", fill = "blue") + labs(title = "Histogram, data without NA", x = "Date", y = "Steps") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+
+hist
+```
+
+## Calculate the mean and median for each day
+```{r}
+# Mean and median number of steps taken each day
+
+mean_median_per_day <- data_na %>%
+    group_by(month,day)%>%
+    summarise(mean = mean(steps),
+              median = median(steps))
+
+print(mean_median_per_day)
+```
+
+## Use ggplot2 to graph the activity pattern and indicate the maximum value
+```{r fig.height=5}
+# What is the average daily activity pattern?
+
+step_each_interval <- data_na %>%
+    group_by(interval)%>%
+    summarise(mean = mean(steps))
+
+max_interval <- step_each_interval %>%
+    filter(mean == max(mean))
+
+activity <- ggplot(step_each_interval, aes(x = interval, y = mean)) + 
+            geom_line() + 
+            geom_hline(yintercept = max_interval$mean, color = "red", linetype = "dashed") + 
+            annotate("text", x = max_interval$interval, y = max_interval$mean, 
+                     label = paste("Max Step: ", max_interval$mean, " at ", max_interval$interval), vjust = -0.5, hjust = -0.1, color = "red") +
+            geom_vline(xintercept = max_interval$interval, color = "red", linetype = "dashed") 
+
+
+
+activity
+```
+
+## Imputing the missing values
+```{r, Imputing missing values}
+# Check all the columns
+
+summary(is.na(data))
+
+```
+## There are 2304 of missing values
+
+
+## Strategy to fill the missing value:
+- The values I plan to fill are based on the mean and sd of each interval. Therefore, I calculated the mean and sd from the data without NA to avoid bias
+- Then merge the mean and sd data to my data frame "step_each_interval_fill" and set the value to be positive
+```{r}
+# Devise a strategy for filling the missing value
+
+# The values I plan to fill are based on the mean and sd of each interval. Therefore, I calculated the mean and sd from the data without NA to avoid bias
+step_each_interval_fill <- data_na %>%
+    group_by(interval)%>%
+    summarise(mean = mean(steps),
+              sd = sd(steps))
+
+# Then merge the mean and sd data to my data frame "step_each_interval_fill" and set the value to be positive
+data_filled <- data%>%
+    left_join(step_each_interval_fill, by = "interval")%>%
+    mutate(steps = ifelse(is.na(steps), round(abs(rnorm(sum(is.na(steps)), mean = mean, sd = sd))), steps))
+
+
+```
+
+# To compare the data from "weekday" and "weekend" days,I extracted the data from both "weekday" and "weekend" days, and separate them into two data frame
+```{r}
+# Are there differences in activity patterns between weekdays and weekends?
+
+# Create a new data frame
+data_filled_wk <- data_filled
+
+# Correct the date format as POSIXlt
+data_filled_wk$date <- as.POSIXlt(data_filled_wk$date)
+
+# Add a day_type column to indicate the "weekday" or "weekend"
+data_filled_wk <- data_filled_wk%>%
+    mutate(day_type = ifelse(weekdays(date) %in% c("Saturday", "Sunday"),"Weekend","Weekday"))
+
+# Assign as factor for day_type
+data_filled_wk$day_type <- as.factor(data_filled_wk$day_type)
+
+# To be simple, subset the data frame by day_type
+weekday <- filter(data_filled_wk, day_type == "Weekday")
+weekend <- filter(data_filled_wk, day_type == "Weekend")
+
+
+```
+
+## For weekday
+- Calculate the total and mean value
+- Use ggplot2 to graph the activity pattern and indicate the maximum value
+```{r}
+# Calculate the data for weekday
+weekday_sum <- weekday %>%
+    group_by(interval)%>%
+    summarise(mean = mean(steps))
+
+weekday_max_interval <- weekday_sum %>%
+    filter(mean == max(mean))
+
+
+
+activity_weekday <- ggplot(weekday_sum, aes(x = interval, y = mean)) + 
+            geom_line() + 
+            geom_hline(yintercept = weekday_max_interval$mean, color = "red", linetype = "dashed") + 
+            annotate("text", x = weekday_max_interval$interval, y = weekday_max_interval$mean, 
+                     label = paste("Max Step: ", weekday_max_interval$mean, " at ", weekday_max_interval$interval), 
+                     vjust = -0.5, hjust = -0.1, color = "red") +
+            geom_vline(xintercept = weekday_max_interval$interval, color = "red", linetype = "dashed")
+
+activity_weekday
+```
+
+## For weekend
+- Calculate the total and mean value
+- Use ggplot2 to graph the activity pattern and indicate the maximum value
+```{r}
+# Calculate the data for weekend
+weekend_sum <- weekend %>%
+    group_by(interval)%>%
+    summarise(mean = mean(steps))
+
+weekend_max_interval <- weekend_sum %>%
+    filter(mean == max(mean))
+
+
+
+activity_weekend <- ggplot(weekend_sum, aes(x = interval, y = mean)) + 
+            geom_line() + 
+            geom_hline(yintercept = weekend_max_interval$mean, color = "red", linetype = "dashed") + 
+            annotate("text", x = weekend_max_interval$interval, y = weekend_max_interval$mean, 
+                     label = paste("Max Step: ", weekend_max_interval$mean, " at ", weekend_max_interval$interval), 
+                     vjust = -0.5, hjust = -0.1, color = "red") +
+            geom_vline(xintercept = weekend_max_interval$interval, color = "red", linetype = "dashed")
+
+activity_weekend
+
+```
+
+## Use patchwork pacakge to combine both plot and export
+```{r fig.height=10}
+library(patchwork)
+combined_plot <- activity_weekday + activity_weekend
+
+combined_plot <- combined_plot +
+  plot_layout(ncol = 1)
+
+print(combined_plot)
+```
